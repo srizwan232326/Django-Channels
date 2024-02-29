@@ -3,7 +3,8 @@ import json
 import asyncio
 import pymcprotocol
 from .views import *
-
+from .models import plcparameter , word_batch_read
+from channels.db import database_sync_to_async
 
 class MPLC:
     def __init__(self, ip_addr, port, plctype, commtype):
@@ -15,12 +16,20 @@ class MPLC:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.plcobj.connect, self.ip_addr, self.port)
         print("Connected to PLC")
+    
+    @database_sync_to_async
+    def get_plc_tags(self):
+        return word_batch_read.objects.get()
+    
 
     async def fetch_plc_data(self):
-        bit_start_address = 'D100'
-        read_bits_l0_to_l100 = self.plcobj.batchread_wordunits(headdevice=bit_start_address, readsize=10)
-        result = {f"{bit_start_address}-{i}": value for i, value in enumerate(read_bits_l0_to_l100)}
+        address = await self.get_plc_tags()
+        bit_start_address = address.startaddress
+        read_size = int(address.readsize)
+        read_bits_l0_to_l100 = self.plcobj.batchread_wordunits(headdevice=str(bit_start_address), readsize=read_size)
+        result = {f"{address}-{i}": value for i, value in enumerate(read_bits_l0_to_l100)}
         result = {f"D{100+i}": value for i, (key, value) in enumerate(result.items())}
+        
 
         d100_value = result.get('D100', 0)
 
@@ -39,7 +48,13 @@ class MPLC:
 class WSConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
-        mplc = MPLC(ip_addr="192.169.4.30", port=8001, plctype="L", commtype="binary")
+        plc_params = await self.get_plc_params()
+        mplc = MPLC(
+            ip_addr=plc_params.plc_ip,
+            port=plc_params.plc_port,
+            plctype=plc_params.plc_series,
+            commtype=plc_params.plc_communication_type
+        )
         await mplc.connect()
         while True:
             plc_data = await mplc.fetch_plc_data()
@@ -48,4 +63,13 @@ class WSConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(1)
 
     async def disconnect(self, close_code):
-        pass 
+        pass
+
+    @database_sync_to_async
+    def get_plc_params(self):
+        return plcparameter.objects.first()
+    
+    
+
+
+#mplc = MPLC(ip_addr="192.169.4.30", port=8001, plctype="L", commtype="binary")

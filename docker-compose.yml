@@ -6,16 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - db-1
-    command: ["./wait-for-it.sh", "localhost:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+      - db 
+    command: ["./wait-for-it.sh", "db:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     ports:
       - "8000:8000"
 
-  db-1:
+  db:
     image: postgres:latest
     environment:
-      POSTGRES_DB: data
+      POSTGRES_DB: realtime_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: taikisha
     ports:
-      - "5432:5432"
+      - "5436:5432"

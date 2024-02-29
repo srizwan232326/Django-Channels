@@ -76,18 +76,19 @@ ASGI_APPLICATION = 'realtime.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# settings.py
+
 DATABASES = {
     'default': {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "data",
+        "NAME": "realtime_db", 
         "USER": "postgres",
-        "PASSWORD": "taikisha",
-        "HOST": "db-1",
+        "PASSWORD": "taikisha", 
+        "HOST": "db",
         "PORT": "5432",
     }
-
-    
 }
+
 
 
 # Password validation

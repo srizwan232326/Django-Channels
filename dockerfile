@@ -1,3 +1,5 @@
+# Dockerfile
+
 FROM python:3.12
 
 ENV PYTHONBUFFERED=1
@@ -19,4 +21,4 @@ RUN chmod +x wait-for-it.sh
 EXPOSE 8000
 
 # Start the application
-CMD ["./wait-for-it.sh", "db-1:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["./wait-for-it.sh", "db:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
