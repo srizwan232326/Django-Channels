@@ -18,4 +18,16 @@ class plcparameter(models.Model):
 
 class word_batch_read(models.Model):
     startaddress = models.CharField(max_length=100)
-    readsize = models.IntegerField()    
+    readsize = models.IntegerField()
+
+
+class LoadingStation(models.Model):
+    hanger_number = models.IntegerField()
+    live_status = models.IntegerField()
+    zone_number = models.IntegerField()
+
+class Zonedata(models.Model): 
+    loading_station = models.ForeignKey('LoadingStation', on_delete=models.CASCADE)
+    loading_zone1 = models.JSONField(null=True)
+    degrease_zone2 = models.JSONField(null=True)
+

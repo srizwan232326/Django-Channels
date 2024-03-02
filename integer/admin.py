@@ -14,3 +14,12 @@ class plcparameterAdmin(admin.ModelAdmin):
 @admin.register(word_batch_read)
 class word_batch_readAdmin(admin.ModelAdmin):
     list_display = ["startaddress", "readsize"]
+
+class ZoneDataInline(admin.TabularInline):
+    model = Zonedata
+    extra = 1
+
+@admin.register(LoadingStation)
+class LoadingStationAdmin(admin.ModelAdmin):
+    list_display = ["hanger_number", "live_status", "zone_number"]
+    inlines = [ZoneDataInline]

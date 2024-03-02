@@ -20,5 +20,7 @@ RUN chmod +x wait-for-it.sh
 
 EXPOSE 8000
 
-# Start the application
-CMD ["./wait-for-it.sh", "db:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+RUN echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
+
+# Wait for the database
+CMD ["./wait-for-it.sh", "db:5432", "--", "celery", "-A", "realtime", "worker", "-l", "info"]

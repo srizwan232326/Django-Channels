@@ -160,14 +160,23 @@ fi
 if [[ $WAITFORIT_CHILD -gt 0 ]]; then
     wait_for
     WAITFORIT_RESULT=$?
+    wait_for -s redis 6379
     exit $WAITFORIT_RESULT
 else
     if [[ $WAITFORIT_TIMEOUT -gt 0 ]]; then
         wait_for_wrapper
         WAITFORIT_RESULT=$?
+        if [[ $WAITFORIT_RESULT -eq 0 ]]; then
+            # If the initial wait is successful, wait for Redis
+            wait_for -s redis 6379
+        fi
     else
         wait_for
         WAITFORIT_RESULT=$?
+        if [[ $WAITFORIT_RESULT -eq 0 ]]; then
+            # If the initial wait is successful, wait for Redis
+            wait_for -s redis 6379
+        fi
     fi
 fi
 

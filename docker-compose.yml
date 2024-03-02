@@ -6,10 +6,32 @@ services:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - db 
+      - db
+      - redis
     command: ["./wait-for-it.sh", "db:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
     ports:
       - "8000:8000"
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+      - redis
+    command: ["celery", "-A", "realtime", "worker", "-l", "info"]
+    environment:
+      - CELERY_BROKER=redis://redis:6379/
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - celery
+    command: ["celery", "-A", "realtime", "beat", "-l", "info"]
+    environment:
+      - CELERY_BROKER=redis://redis:6379/
 
   db:
     image: postgres:latest
@@ -19,3 +41,11 @@ services:
       POSTGRES_PASSWORD: taikisha
     ports:
       - "5436:5432"
+
+  redis:
+    image: redis:7.2.4
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6379:6379"
