@@ -39,3 +39,4 @@ def save_plc_data_async(hanger_no, live_status, zone_no, loading_intime, loading
 def test(request):
     print_test.delay()
     return HttpResponse("Task has been created")
+

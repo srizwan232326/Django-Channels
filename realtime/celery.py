@@ -14,9 +14,16 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.beat_schedule = {
     'add-every-2-seconds': {  
         'task': 'integer.tasks.print_test',
-        'schedule': 1.0,
+        'schedule': 100.0,
+    },
+
+    'Plctest': {
+        'task': 'integer.tasks.mplc_main_task',
+        'schedule': 10.0,
+        'args': ('192.169.4.30', 8001, 'L', 'binary'),
     },
 }
+
 
 app.autodiscover_tasks()
 
