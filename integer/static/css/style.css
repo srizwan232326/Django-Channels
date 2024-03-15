@@ -1,0 +1,188 @@
+@import url("https://fonts.googleapis.com/css?family=ubuntu:wght@300;400;500;700&display=swap");
+*
+{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Ubuntu', sans-serif;
+}
+
+body
+{
+    min-height: 100vh;
+    background: #365fa1;
+
+}
+
+.navigations
+{
+    position: fixed;
+    inset: 20px;
+    background: #287bff;
+    width: 80px;
+    border-left: 10px solid #287bff;
+    border-radius: 50px;
+    overflow: hidden;
+    box-shadow: 15px 15px 25px rgba(0, 0, 0, 0.05);
+    transition: width  1s;
+}
+
+
+.navigations.active
+{
+    width: 300px;
+    border-radius: 20px;
+
+}
+
+
+
+.toggle
+{
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    width: 50px;
+    height: 50px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.toggle::before
+{
+    content: '';
+    position: absolute;
+    width: 26px;
+    height: 3px;
+    border-radius: 3px;
+    background: #365fa1;
+    transform: translate(-5px);
+    transition: 1s;
+}
+
+.toggle::after
+{
+    content: '';
+    position: absolute;
+    width: 26px;
+    height: 3px;
+    border-radius: 3px;
+    background: #365fa1;
+    transform: translate(5px);
+    transition: 1s;
+}
+
+.navigations.active .toggle::before
+{
+    transform: translateY(0px) rotate(-405deg);
+}
+
+.navigations.active .toggle::after
+{
+    transform: translateY(0px) rotate(225deg);
+}
+
+.navigations ul
+{
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+}
+
+.navigations ul li
+{
+    position: relative;
+    width: 100%;
+    list-style: none;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+}
+
+
+
+.navigations ul li a:hover
+{
+    background: #fff;
+    color: #222;
+}
+
+.navigations ul li:nth-child(1)
+{
+    top: 20%;
+    margin-bottom: 40px;
+    background: none;
+}
+
+.navigations ul li:not(:first-child):hover::before
+{
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 0px;
+    width: 20%;
+    height: 20px;
+    background: transparent;
+    border-bottom-right-radius: 20px;
+    box-shadow: 7.5px 7.5px 0  7.5px #fff;
+}
+
+.navigations ul li:not(:first-child):hover::after
+{
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: 0px;
+    width: 20%;
+    height: 20px;
+    background: transparent;
+    border-bottom-right-radius: 20px;
+    box-shadow: 7.5px 7.5px 0  7.5px #fff;
+}
+
+.navigations ul li a
+{
+    position: relative;
+    display: block;
+    width: 100%;
+    display: flex;
+    text-decoration: none;
+    color: #fff;
+}
+.navigations ul li:hover:not(:first-child) a
+{
+   color: #365fa1;
+}
+
+.navigations ul li a .icon
+{
+    position: relative;
+    display: block;
+    min-width: 60px;
+    height: 60px;
+    line-height: 70px;
+    text-align: center;
+
+}
+
+.navigations ul li a .icon ion-icon
+{
+    font-size: 1.75em;
+}
+
+.navigations ul li a .title
+{
+    position: relative;
+    display: block;
+    padding: 0 10px;
+    height: 60px;
+    line-height: 60px;
+    text-align: start;
+    white-space: nowrap;
+    
+}

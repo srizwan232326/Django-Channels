@@ -55,14 +55,19 @@ class device_tag_setting(models.Model):
         ('single-precision', 'single-precision'), 
         ('double-precision', 'double-precision')
     ])
-    time = models.CharField(max_length=100, choices=[
-        ('1sec', '1sec'), 
-        ('5sec', '5sec'), 
-        ('60sec', '60sec'), 
-        ('10min', '10min')
-    ])
     no_of_char = models.IntegerField(null=True)
+    #logging_interval = models.CharField(max_length=100, null=True, blank=True,  choices=[
+    #    ('5sec', '5sec'), 
+    #])
+    #trigger = models.ForeignKey('TriggerConfiguration', null=True, blank=True, on_delete=models.CASCADE)
 
+
+class TriggerConfiguration(models.Model):
+    tag = models.ForeignKey(device_tag_setting, on_delete=models.CASCADE)
+    address = models.CharField(max_length=100 , null=True, blank=True)
+    trigger_enabled = models.BooleanField(choices=[(True, 'True'), (False, 'False')])
+    comment = models.CharField(max_length=100)
+                                  
 
 class datatrigger(models.Model):
     tag = models.ForeignKey(device_tag_setting, on_delete=models.CASCADE)

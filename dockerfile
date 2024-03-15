@@ -22,5 +22,10 @@ EXPOSE 8000
 
 RUN echo "vm.overcommit_memory = 1" >> /etc/sysctl.conf
 
+RUN adduser --disabled-password --gecos '' taikisha
+
+# Switch to the non-root user
+USER taikisha
+
 # Wait for the database
 CMD ["./wait-for-it.sh", "db:5432", "--", "celery", "-A", "realtime", "worker", "-l", "info"]

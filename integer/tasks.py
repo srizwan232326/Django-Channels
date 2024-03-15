@@ -7,6 +7,7 @@ from channels.db import database_sync_to_async
 from asgiref.sync import sync_to_async
 from time import sleep
 from .views import *
+from integer.dataloggers import *
 class MPLC:
     def __init__(self, ip_addr, port, plctype, commtype):
         self.ip_addr = ip_addr
@@ -19,6 +20,10 @@ class MPLC:
         await loop.run_in_executor(None, self.plcobj.connect, self.ip_addr, self.port)
         print("Connected to PLC")
 
+    def close_connection(self):
+            self.plcobj.close()
+            print("Connection closed")
+            
     @database_sync_to_async
     def get_plc_tags(self):
         connected_ip = self.ip_addr
@@ -58,10 +63,9 @@ class MPLC:
                         string_result += ''.join(ascii_characters[::-1])
                     result[plc_address] = string_result
 
- 
             if isinstance(result,dict):
                     result_value = result.get('D100')
-                    if result_value :
+                    if result_value==1 :
                         if not hasattr(self, 'plc_data_saved') or not self.plc_data_saved:
                             await save_plc_data_async(result.get('D101', 0 ), result.get('D102',0), result.get('D104',0))
                             tag_settings = await self.get_plc_tags()
@@ -72,32 +76,25 @@ class MPLC:
                             test = await save_plc_data_async(*list(address_mapping.values()))
    
                             print(test)
-                            #await save_plc_data_async(list(address_mapping.values()))                              
-                            #await self.wordWriteBatch('D100', [2])
+                            await save_plc_data_async(list(address_mapping.values()))                              
+                            await self.wordWriteBatch('D100', [2])
                             self.plc_data_saved = False
                     elif result_value == 0:
                         self.plc_data_saved = False
             else:
                 print("Invalid result type. Expected a dictionary.")
 
+            return result
+    #//////////////////////////////////CYCLIC DATA LOGGING////////////////////////////////////////
 
+
+        
+
+    #//////////////////////////////////CYCLIC DATA LOGGING////////////////////////////////////////
     async def wordWriteBatch(self, device, value_batch_list):
         self.plcobj.batchwrite_wordunits(headdevice=device, values=value_batch_list)
         return "Write operation successful"
-        
-    def dwordReadBatch(self, dwordaddrlist):
-        resp_dict = []
-        for dword in dwordaddrlist:
-            word_values, dword_values = self.plcobj.randomread(
-                word_devices=[], dword_devices=[dword])
-            if dword_values[0] > 20000:
-                dword_values[0] = dword_values[0] - 65535
-            resp_dict.append(dword_values[0])
-        return resp_dict
-    
-    def close_connection(self):
-        self.plcobj.close()
-        print("Connection closed")
+
 
 initail_run = True
 if initail_run:
@@ -108,8 +105,12 @@ if initail_run:
         def run(self):
             try:
                 while True:
-                    asyncio.run(self.mplc.main())
+                    result= asyncio.run(self.mplc.main())
+                    print('result is',result)
                     initail_run = False
+                    if result:
+                        logging_microservice = LoggingMicroservice()
+                        asyncio.run(logging_microservice.start_logging(result))
             except Exception as e:
                 print(e)
                 initail_run = True

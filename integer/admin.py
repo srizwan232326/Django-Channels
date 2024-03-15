@@ -32,7 +32,11 @@ class dataloggerAdmin(admin.ModelAdmin):
 
 @admin.register(device_tag_setting)
 class device_tag_settingAdmin(admin.ModelAdmin):
-    list_display = ["plc", "address", "description", "data_type", "time" ,"no_of_char"]
+    list_display = ["plc", "address", "description", "data_type", "no_of_char"]
+
+@admin.register(TriggerConfiguration)
+class TriggerConfigurationAdmin(admin.ModelAdmin):
+    list_display = ["tag", "trigger_enabled", "comment"]
 
 @admin.register(datatrigger)
 class datatriggerAdmin(admin.ModelAdmin):
@@ -41,4 +45,5 @@ class datatriggerAdmin(admin.ModelAdmin):
 @admin.register(datahistory)
 class datahistoryAdmin(admin.ModelAdmin):
     list_display = ["count", "doublecount", "char", "date"]
-    
+
+

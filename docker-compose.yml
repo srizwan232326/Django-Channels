@@ -8,7 +8,10 @@ services:
     depends_on:
       - db
       - redis
-    command: ["./wait-for-it.sh", "db:5432", "--", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+    command: ["./wait-for-it.sh", "db:5432", "--", "bash", "-c", "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+
+    volumes:
+      - .:/app
     ports:
       - "8000:8000"
 
@@ -22,6 +25,7 @@ services:
     command: ["celery", "-A", "realtime", "worker", "-l", "info"]
     environment:
       - CELERY_BROKER=redis://redis:6379/
+    user: taikisha
 
   celery-beat:
     build:
@@ -32,6 +36,7 @@ services:
     command: ["celery", "-A", "realtime", "beat", "-l", "info"]
     environment:
       - CELERY_BROKER=redis://redis:6379/
+    user: taikisha
 
   db:
     image: postgres:latest
@@ -49,3 +54,5 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf
     ports:
       - "6379:6379"
+    
+  

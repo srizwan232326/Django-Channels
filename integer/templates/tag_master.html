@@ -1,0 +1,198 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/script.js' %}"></script>
+    <title>PLC Settings</title>
+  </head>
+  <body>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    
+    {% include 'sidehover.html' %}
+    <div class="mainwork">
+        <h2>ADD TRIGGER DETAILS</h2>
+        <form id="triggerForm">
+            {% csrf_token %}
+            <label for="plcIp">PLC IP:</label>
+            <select id="plcIp" name="plcIp" onchange="filterTagsByIP()"></select>
+    
+            <label for="tag">Tag:</label>
+            <input type="address" name="address" id="address">
+    
+            <label for="Data Type">Data Type</label>
+                <select name="data_type" id="data_type">
+                    <option value="bit">Bit</option>
+                    <option value="int">Integer</option>
+                    <option value="dint">Double Integer</option>
+                    <option value="string">String</option>
+                    <option value="single-precision">Single Precision</option>
+                    <option value="double-precision">Double Precision</option>
+                </select>
+
+    
+            <label for="No of Char">No of Char</label>
+            <input type="no_of_char" name="no_of_char" id="no_of_char">
+    
+            <label for="Description">Description</label>
+            <input type="description" name="description" id="description">
+    
+            <button type="button" id="submitButton">Submit</button>
+        </form>
+    </div>
+    
+       
+        <div class="mainwork2">
+            <h2>PLC DETAILS</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ADDRESS</th>
+                            <th>DESCRIPTION</th>
+                            <th>DATA TYPE</th>
+                            <th>NO OF CHAR</th>
+                            <th>PLC IP</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="deviceTagSettingsBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        
+
+</body>
+</html>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var apiUrl = 'http://localhost:8000/api/device-tag-settings/';
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                for (var i = 0; i < data.length; i++) {
+                    var row = '<tr>' +
+                        '<td>' + data[i].id + '</td>' +
+                        '<td>' + data[i].address + '</td>' +
+                        '<td>' + data[i].description + '</td>' +
+                        '<td>' + data[i].data_type + '</td>' +
+                        '<td>' + data[i].no_of_char + '</td>' +
+                        '<td>' + data[i].plc.plc_ip + '</td>' +
+                        '<td><button class="btn btn-danger" onclick="deletetag(' + data[i].address + ')">Delete</button></td>' +
+                '</tr>';
+                    document.getElementById('deviceTagSettingsBody').innerHTML += row;
+                }
+            })
+            .catch(error => {
+                console.log('Error fetching data:', error);
+            });
+    });
+
+///////for removeRow
+function deletetag(address) {
+    const csrftoken2 = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const encodedAddress = encodeURIComponent(address);
+
+    fetch('/api/device-tag-settings/' + encodedAddress + '/', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken2,
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('PLC deleted successfully.');
+            document.getElementById('plcTable').getElementsByTagName('tbody')[0].innerHTML = '';
+            fetchAndDisplayPLCData();
+        } else {
+            console.error('Error deleting PLC:', response.statusText);
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting PLC:', error);
+    });
+}
+
+///for submitButton
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById('submitButton').addEventListener('click', function() {
+        var formData = {
+            plc: {
+                plc_ip: document.getElementById('plcIp').value
+            },
+            address: document.getElementById('address').value,
+            data_type: document.getElementById('data_type').value,
+            no_of_char: document.getElementById('no_of_char').value,
+            description: document.getElementById('description').value
+        };
+        
+        var apiUrl = 'http://localhost:8000/api/device-tag-settings/';
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Handle successful submission, if needed
+            console.log('Data submitted successfully:', data);
+        })
+        .catch(error => {
+            // Handle error, if needed
+            console.log('Error submitting data:', error);
+        });
+    });
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Replace 'http://localhost:8000/api/plc-ip-list/' with your API endpoint
+    var plcIpListUrl = 'http://localhost:8000/api/plc-ip-list/';
+
+    // Fetch PLC IP addresses from the server
+    fetch(plcIpListUrl)
+        .then(response => response.json())
+        .then(data => {
+            // Populate the PLC IP dropdown
+            var plcIpDropdown = document.getElementById('plcIp');
+            data.forEach(function(plcIp) {
+                var option = document.createElement('option');
+                option.value = plcIp;
+                option.text = plcIp;
+                plcIpDropdown.add(option);
+            });
+        })
+        .catch(error => {
+            console.log('Error fetching PLC IP addresses:', error);
+        });
+
+    // Handle form submission...
+});
+</script>
+
+
+<style>
+.mainwork{
+    margin-left: 300px;
+}
+.mainwork2{
+    margin-left: 100px;
+    margin-top: 100px;
+}
+</style>
