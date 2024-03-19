@@ -36,7 +36,7 @@ class device_tag_settingAdmin(admin.ModelAdmin):
 
 @admin.register(TriggerConfiguration)
 class TriggerConfigurationAdmin(admin.ModelAdmin):
-    list_display = ["tag", "trigger_enabled", "comment"]
+    list_display = ["tag", "address", "comment"]
 
 @admin.register(datatrigger)
 class datatriggerAdmin(admin.ModelAdmin):

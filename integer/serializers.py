@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import LoadingStation, Zonedata , datalogger , device_tag_setting , TriggerConfiguration
+from .models import LoadingStation, Zonedata , datalogger , device_tag_setting , TriggerConfiguration , Triggerloggers
 
 class LoadingStationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,8 +28,15 @@ class DeviceTagSettingSerializer(serializers.ModelSerializer):
 
 
 class TriggerConfigurationSerializer(serializers.ModelSerializer):
+    tag = DeviceTagSettingSerializer()
     class Meta:
         model = TriggerConfiguration
+        fields = '__all__'
+
+class Triggerdataseralizer(serializers.ModelSerializer):
+    triggertag = TriggerConfigurationSerializer()
+    class Meta:
+        model = Triggerloggers
         fields = '__all__'
 
 class DataloggerSerializerfortag(serializers.ModelSerializer):
@@ -55,3 +62,8 @@ class DeviceTagSettingSubsetSerializer(serializers.ModelSerializer):
     class Meta:
         model = device_tag_setting
         fields = ['id', 'address', 'description', 'data_type', 'no_of_char']
+
+class TriggerloggersSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Triggerloggers
+        fields = '__all__'

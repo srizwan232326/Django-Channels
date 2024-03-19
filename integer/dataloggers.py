@@ -47,3 +47,11 @@ class LoggingMicroservice:
         finally:
             await asyncio.sleep(10)
             self.logging_task_running = False
+
+
+async def triggerlogger2(result):
+    print("Trigger logging started.", result)
+    # logging_microservice = LoggingMicroservice()
+    # asyncio.create_task(logging_microservice.start_logging(result))
+    # print("Trigger logging started.")
+    # return "Trigger logging started."

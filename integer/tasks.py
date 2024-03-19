@@ -8,6 +8,7 @@ from asgiref.sync import sync_to_async
 from time import sleep
 from .views import *
 from integer.dataloggers import *
+from .trigger_logger import triggerlogger
 class MPLC:
     def __init__(self, ip_addr, port, plctype, commtype):
         self.ip_addr = ip_addr
@@ -29,6 +30,18 @@ class MPLC:
         connected_ip = self.ip_addr
         return [{'address': record.address, 'data_type': record.data_type , 'readsize' : record.no_of_char} for record in device_tag_setting.objects.filter(plc__plc_ip=connected_ip)]
     
+    @database_sync_to_async
+    def get_trigger_tags(self):
+        connected_ip = self.ip_addr
+        return [{'trigger_tag': record.triggertag, 'log_tag': record.tag} for record in Triggerloggers.objects.filter(triggertag__tag__plc__plc_ip=connected_ip)]
+    
+    @database_sync_to_async
+    def get_trigger_tags(self):
+        connected_ip = self.ip_addr
+        return [{'trigger_tag': record.triggertag.address, 'log_tag': record.tag} for record in Triggerloggers.objects.filter(triggertag__tag__plc__plc_ip=connected_ip)]
+
+
+
     async def main(self):
         if not self.plcobj._is_connected:
             await self.connect()
@@ -64,33 +77,11 @@ class MPLC:
                     result[plc_address] = string_result
 
             if isinstance(result,dict):
-                    result_value = result.get('D100')
-                    if result_value==1 :
-                        if not hasattr(self, 'plc_data_saved') or not self.plc_data_saved:
-                            await save_plc_data_async(result.get('D101', 0 ), result.get('D102',0), result.get('D104',0))
-                            tag_settings = await self.get_plc_tags()
-                            print(tag_settings)
-                            address_mapping = {tag['address']: result.get(tag['address'], 0) for tag in tag_settings}
-                            address_mapping.pop('D100', None)
-                            print("Original address_mapping:", address_mapping)
-                            test = await save_plc_data_async(*list(address_mapping.values()))
-   
-                            print(test)
-                            await save_plc_data_async(list(address_mapping.values()))                              
-                            await self.wordWriteBatch('D100', [2])
-                            self.plc_data_saved = False
-                    elif result_value == 0:
-                        self.plc_data_saved = False
-            else:
-                print("Invalid result type. Expected a dictionary.")
+                task = asyncio.ensure_future(triggerlogger(result, self))
+                await asyncio.shield(task)
 
             return result
-    #//////////////////////////////////CYCLIC DATA LOGGING////////////////////////////////////////
-
-
-        
-
-    #//////////////////////////////////CYCLIC DATA LOGGING////////////////////////////////////////
+    #//////////////////////////////////CYCLIC DATA LOGGING////////////////////////////////////////  
     async def wordWriteBatch(self, device, value_batch_list):
         self.plcobj.batchwrite_wordunits(headdevice=device, values=value_batch_list)
         return "Write operation successful"
@@ -106,11 +97,7 @@ if initail_run:
             try:
                 while True:
                     result= asyncio.run(self.mplc.main())
-                    print('result is',result)
-                    initail_run = False
-                    if result:
-                        logging_microservice = LoggingMicroservice()
-                        asyncio.run(logging_microservice.start_logging(result))
+                    print(result)        
             except Exception as e:
                 print(e)
                 initail_run = True

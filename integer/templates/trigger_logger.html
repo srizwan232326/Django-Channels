@@ -1,0 +1,277 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="{% static 'js/script.js' %}"></script>
+    <title>Trigger Logger</title>
+  </head>
+  <body>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.3/dist/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    
+    {% include 'sidehover.html' %}
+
+    <div class="mainwork">
+        <h2>TRIGGER LOGGER</h2>
+        <form id="triggerForm" >
+            {% csrf_token %}
+            <label for="plcMake">PLC Make:</label>
+            <select id="plcMake" name="plcMake" onchange="filterIPsByMake()"></select>
+        
+            <label for="plcIp">PLC IP:</label>
+            <select id="plcIp" name="plcIp" onchange="filterTagsByIP()"></select>
+        
+            <label for="tag">Log Address</label>
+            <select id="tag" name="tag"></select>
+        
+            <label for="tag">Trigger Tag</label>
+            <select id="triggertag" name="triggertag"></select>
+
+            <button type="button" id="submitButton">Submit</button>
+        </form>
+
+        <div class="mainwork2">
+            <h2>PLC DETAILS</h2>
+            <div class="table-responsive">
+                <table class="table" id="plcTable">
+                    <thead>
+                        <th>ID</th>
+                        <th>PLC MAKE</th>
+                        <th>PLC IP</th>
+                        <th>LOG ADDRESS</th>
+                        <th>TRIGGER ADDRESS</th>
+                        <th>ACTION</th>
+                    </thead>
+                    <tbody>
+        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+</body>
+</html>
+
+<script>
+   var allData; // Variable to store the original data
+
+function fetchDataAndPopulateDropdowns() {
+    fetch('http://localhost:8000/api/trigger-configurations/')
+        .then(response => response.json())
+        .then(data => {
+            allData = data; // Store the original data for reference
+            
+            var plcMakeDropdown = document.getElementById("plcMake");
+            var uniquePlcMakes = [...new Set(data.map(item => item.plc.Plc_make))];
+            uniquePlcMakes.forEach(make => {
+                var plcMakeOption = document.createElement("option");
+                plcMakeOption.text = make;
+                plcMakeDropdown.add(plcMakeOption);
+            });
+
+            // Populate PLC IP dropdown
+            var plcIpDropdown = document.getElementById("plcIp");
+            var uniquePlcIps = [...new Set(data.map(item => item.plc.plc_ip))];
+            uniquePlcIps.forEach(ip => {
+                var plcIpOption = document.createElement("option");
+                plcIpOption.text = ip;
+                plcIpDropdown.add(plcIpOption);
+            });
+
+            // Populate Tag dropdown
+            var tagDropdown = document.getElementById("tag");
+            data.forEach(item => {
+                var tagOption = document.createElement("option");
+                tagOption.text = item.address; // Adjust based on your actual data structure
+                tagDropdown.add(tagOption);
+            });
+            
+            // Fetch trigger tags initially based on the default selected IP
+            filterTagsByIP();
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+// Function to filter PLC IPs based on the selected PLC Make
+function filterIPsByMake() {
+    var selectedMake = document.getElementById("plcMake").value;
+    var filteredIPs = allData
+        .filter(item => item.plc.Plc_make === selectedMake)
+        .map(item => item.plc.plc_ip);
+
+    var plcIpDropdown = document.getElementById("plcIp");
+    clearDropdown(plcIpDropdown);
+    filteredIPs.forEach(ip => {
+        var plcIpOption = document.createElement("option");
+        plcIpOption.text = ip;
+        plcIpDropdown.add(plcIpOption);
+    });
+    clearDropdown(document.getElementById("tag"));
+    filterTagsByIP(); // Filter tags by IP after changing PLC Make
+}
+
+function filterTagsByIP() {
+    var selectedIP = document.getElementById("plcIp").value;
+    var filteredTags = allData
+        .filter(item => item.plc && item.plc.plc_ip === selectedIP)
+        .map(item => item.address);
+
+    var tagDropdown = document.getElementById("tag");
+    clearDropdown(tagDropdown);
+    filteredTags.forEach(tag => {
+        var tagOption = document.createElement("option");
+        tagOption.text = tag;
+        tagDropdown.add(tagOption);
+    });
+    fetchtriggertag(); // Fetch trigger tags based on the selected IP
+}
+
+function clearDropdown(dropdown) {
+    dropdown.innerHTML = "";
+}
+
+// Function to fetch trigger tags based on the selected PLC IP
+function fetchtriggertag() {
+    var selectedIP = document.getElementById("plcIp").value;
+    fetch('http://localhost:8000/api/trigger-list/')
+        .then(response => response.json())
+        .then(data => {
+            var filteredTags = data
+                .filter(item => item.tag.plc && item.tag.plc.plc_ip === selectedIP)
+                .map(item => item.address);
+
+            var triggertagDropdown = document.getElementById("triggertag");
+            clearDropdown(triggertagDropdown);
+            filteredTags.forEach(tag => {
+                var triggertagOption = document.createElement("option");
+                triggertagOption.text = tag;
+                triggertagDropdown.add(triggertagOption);
+            });
+        })
+        .catch(error => console.error('Error fetching data:', error));
+}
+
+// Call fetchDataAndPopulateDropdowns when the page loads
+fetchDataAndPopulateDropdowns();
+
+// Attach onchange event listener to PLC Make dropdown
+document.getElementById("plcMake").onchange = function() {
+    filterIPsByMake();
+};
+
+// Attach onchange event listener to PLC IP dropdown
+document.getElementById("plcIp").onchange = function() {
+    filterTagsByIP();
+};
+
+
+    //////////////////////////////////////////submitForm////////////////////////////////////////
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var submitButton = document.getElementById('submitButton');
+        submitButton.addEventListener('click', submitForm);
+    });
+    function submitForm() {
+        const formData = new FormData(document.getElementById('triggerForm'));
+            fetch('http://localhost:8000/api/trigger-data-submit/', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+                
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data.message);
+            fetchDataAndPopulateTable() 
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+    
+
+
+    //////////////////////////////////////////fetchAndDisplayPLCData////////////////////////////////////////
+    function fetchDataAndPopulateTable() {
+        // Fetch data from the API endpoint
+        fetch('http://localhost:8000/api/trigger-data-submit/')
+            .then(response => response.json())
+            .then(data => {
+                console.log("api data" , data)
+                // Assuming the API response structure is similar to the previous example
+                var responseData = data;
+
+                // Function to populate the table
+                function populateTable() {
+                    var tableBody = $('#plcTable tbody');
+                    tableBody.empty();  // Clear existing rows
+
+                        $.each(responseData.trigger_loggers, function(index, config) {
+                        var row = '<tr>' +
+                            '<td>' + config.id + '</td>' +
+                            '<td>' + config.triggertag.tag.plc.Plc_make + '</td>' + 
+                            '<td>' + config.triggertag.tag.plc.plc_ip + '</td>' + 
+                            '<td>' + (config.tag || 'N/A') + '</td>' +
+                            '<td>' + config.triggertag.address + '</td>' +
+                            '<td><button class="btn btn-danger" onclick="deleteConfig(' + config.id + ')">Delete</button></td>' +
+
+                            '</tr>';
+
+                        tableBody.append(row);
+                    });
+                }
+
+                // Call the function to populate the table
+                populateTable();
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }
+fetchDataAndPopulateTable()
+
+
+
+    // Function to delete a configuration
+    function deleteConfig(id) {
+        const csrftoken2 = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch(`http://localhost:8000/api/trigger-data-submit/${id}/`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken2,
+            },
+        })
+        
+        .then(data => {
+            console.log(data.message);
+            fetchDataAndPopulateTable(); 
+        })
+        .catch(error => console.error('Error deleting data:', error));
+    }
+    
+</script>
+
+
+
+
+
+
+
+<style>
+.mainwork{
+    margin-left: 300px;
+}
+.mainwork2{
+    margin-left: 50px;
+    margin-top: 200px;
+}
+</style>

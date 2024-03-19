@@ -14,12 +14,16 @@ urlpatterns = [
     path('tag_master/', tag_master, name='tag_master'),
     path('dashboard/', dashboard, name='dashboard'),
     path('trigger/', trigger, name='trigger'),
+    path('trigger_logger/', trigger_logger, name='trigger'),
     path('api/trigger-configurations/', TriggerSetting.as_view(), name='trigger-configurations-api'),
     path('api/trigger-setting/', TriggerSettingAPIView.as_view(), name='trigger-configurations-api'),
-    path('api/trigger-setting/<int:config_id>/', TriggerSettingAPIView.as_view(), name='trigger_setting_detail'),
+    path('api/trigger-setting/<int:config_id>/<str:address>/', TriggerSettingAPIView.as_view(), name='trigger_setting_detail'),
     path('api/device-tag-settings/', DeviceTagSettingListCreateView.as_view(), name='device-tag-settings-list-create'),
     path('api/device-tag-settings/<int:pk>/', DeviceTagSettingDetailView.as_view(), name='device-tag-settings-detail'),
     path('api/plc-ip-list/', PlcIpListView.as_view(), name='plc-ip-list'),
+    path('api/trigger-list/', triggersettingapiview.as_view(), name='trigger-list'),
+    path('api/trigger-data-submit/', triggerdataapiview.as_view(), name='trigger-data-submit'),
+    path('api/trigger-data-submit/<int:pk>/', triggerdataapiview.as_view(), name='trigger-data-submit'),
 
 
 

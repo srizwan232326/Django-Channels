@@ -42,7 +42,8 @@
     
             <label for="Description">Description</label>
             <input type="description" name="description" id="description">
-    
+            
+            
             <button type="button" id="submitButton">Submit</button>
         </form>
     </div>
@@ -61,6 +62,7 @@
                             <th>NO OF CHAR</th>
                             <th>PLC IP</th>
                             <th>ACTION</th>
+                            
                         </tr>
                     </thead>
                     <tbody id="deviceTagSettingsBody"></tbody>
@@ -75,12 +77,13 @@
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    function fetchDeviceTagSettings() {
         var apiUrl = 'http://localhost:8000/api/device-tag-settings/';
-
+    
         fetch(apiUrl)
             .then(response => response.json())
             .then(data => {
+                document.getElementById('deviceTagSettingsBody').innerHTML = ''; // Clear table body
                 for (var i = 0; i < data.length; i++) {
                     var row = '<tr>' +
                         '<td>' + data[i].id + '</td>' +
@@ -89,23 +92,24 @@
                         '<td>' + data[i].data_type + '</td>' +
                         '<td>' + data[i].no_of_char + '</td>' +
                         '<td>' + data[i].plc.plc_ip + '</td>' +
-                        '<td><button class="btn btn-danger" onclick="deletetag(' + data[i].address + ')">Delete</button></td>' +
-                '</tr>';
+                        '<td><button class="btn btn-danger" onclick="deletetag(' + data[i].id + ')">Delete</button></td>' +
+                        '</tr>';
                     document.getElementById('deviceTagSettingsBody').innerHTML += row;
                 }
             })
             .catch(error => {
                 console.log('Error fetching data:', error);
             });
-    });
+    }
+    
+fetchDeviceTagSettings()
+    
 
 ///////for removeRow
-function deletetag(address) {
+function deletetag(id) {
     const csrftoken2 = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    const encodedAddress = encodeURIComponent(address);
-
-    fetch('/api/device-tag-settings/' + encodedAddress + '/', {
+    fetch('/api/device-tag-settings/' + id + '/', {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
@@ -114,21 +118,24 @@ function deletetag(address) {
     })
     .then(response => {
         if (response.ok) {
-            console.log('PLC deleted successfully.');
-            document.getElementById('plcTable').getElementsByTagName('tbody')[0].innerHTML = '';
-            fetchAndDisplayPLCData();
+            console.log('Tag deleted successfully.');
+            document.getElementById('deviceTagSettingsBody').innerHTML = ''; // Clear table body
+            fetchDeviceTagSettings(); // Fetch and display updated device tag settings
         } else {
-            console.error('Error deleting PLC:', response.statusText);
+            console.error('Error deleting tag:', response.statusText);
         }
     })
     .catch(error => {
-        console.error('Error deleting PLC:', error);
+        console.error('Error deleting tag:', error);
     });
 }
 
+
 ///for submitButton
 document.addEventListener("DOMContentLoaded", function() {
-    document.getElementById('submitButton').addEventListener('click', function() {
+    document.getElementById('submitButton').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent default form submission behavior
+        
         var formData = {
             plc: {
                 plc_ip: document.getElementById('plcIp').value
@@ -151,8 +158,15 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(response => response.json())
         .then(data => {
-            // Handle successful submission, if needed
+            // Handle successful submission
             console.log('Data submitted successfully:', data);
+            fetchDeviceTagSettings(); // Refresh device tag settings
+            
+            // Reset form fields
+            document.getElementById('address').value = '';
+            document.getElementById('data_type').value = '';
+            document.getElementById('no_of_char').value = '';
+            document.getElementById('description').value = '';
         })
         .catch(error => {
             // Handle error, if needed
@@ -160,6 +174,9 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
+
+
 
 document.addEventListener("DOMContentLoaded", function() {
     // Replace 'http://localhost:8000/api/plc-ip-list/' with your API endpoint
