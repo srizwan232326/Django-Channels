@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import plc , plcparameter , LoadingStation, Zonedata , datalogger , device_tag_setting , datatrigger , datahistory , TriggerConfiguration , Triggerloggers
+from .models import plc , plcparameter , LoadingStation, Zonedata , datalogger , device_tag_setting , datatrigger , RobotCycleDataHistory , TriggerConfiguration , Triggerloggers
 from channels.db import database_sync_to_async
 import json
 from django.shortcuts import render, HttpResponse
@@ -38,10 +38,17 @@ def trigger_logger(request):
 @database_sync_to_async
 def save_plc_data_async(*args):
     try:
-        datahistory.objects.create(
-            count=args[0],
-            doublecount=args[1],
-            char=args[2],
+        RobotCycleDataHistory.objects.create(
+            model=args[0],
+            color=args[1],
+            spare1=args[2],
+            spare2=args[3],
+            L_resin_Paint_cons=args[4],
+            L_hardener_Paint_cons=args[5],
+            L_ratio=args[6],
+            R_resin_Paint_cons=args[7],
+            R_hardener_Paint_cons=args[8],
+            R_ratio=args[9]
         )
     except device_tag_setting.DoesNotExist:
         print("device_tag_setting does not exist for address:")

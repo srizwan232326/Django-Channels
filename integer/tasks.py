@@ -9,6 +9,8 @@ from time import sleep
 from .views import *
 from integer.dataloggers import *
 from .trigger_logger import triggerlogger
+import threading
+
 class MPLC:
     def __init__(self, ip_addr, port, plctype, commtype):
         self.ip_addr = ip_addr
@@ -33,12 +35,7 @@ class MPLC:
     @database_sync_to_async
     def get_trigger_tags(self):
         connected_ip = self.ip_addr
-        return [{'trigger_tag': record.triggertag, 'log_tag': record.tag} for record in Triggerloggers.objects.filter(triggertag__tag__plc__plc_ip=connected_ip)]
-    
-    @database_sync_to_async
-    def get_trigger_tags(self):
-        connected_ip = self.ip_addr
-        return [{'trigger_tag': record.triggertag.address, 'log_tag': record.tag} for record in Triggerloggers.objects.filter(triggertag__tag__plc__plc_ip=connected_ip)]
+        return [{'trigger_tag': record.triggertag.address, 'log_tag': record.tag} for record in Triggerloggers.objects.filter(triggertag__tag__plc__plc_ip=connected_ip , triggertag__comment='data_logging')]
 
 
 
@@ -48,7 +45,7 @@ class MPLC:
         else:
             print("Already connected to PLC")
             addresses = await self.get_plc_tags()
-            sleep(0)
+            #asyncio.sleep(10)
             result = {} 
             for address in addresses:
                 plc_address = str(address['address'])
@@ -58,6 +55,12 @@ class MPLC:
                 if data_type == 'int':
                     intread = self.plcobj.batchread_wordunits(headdevice=str(plc_address), readsize=readsize)
                     result[plc_address] = intread[0]
+                
+                elif data_type == "intzr":
+                        tag_start_add_dec = int(plc_address[2:])
+                        tag_start_add_ZR_hex = 'ZR' + str(hex(tag_start_add_dec))
+                        zrread = self.plcobj.batchread_wordunits(headdevice=tag_start_add_ZR_hex, readsize=readsize)
+                        result[plc_address] = zrread[0]
 
 
                 elif data_type == 'dint':
@@ -86,6 +89,19 @@ class MPLC:
         self.plcobj.batchwrite_wordunits(headdevice=device, values=value_batch_list)
         return "Write operation successful"
 
+async def mastertrigger(self):
+    result = await self.mplc.main()
+    print(result)
+    if result:
+        print("result is not none")
+        thread = threading.Thread(target=interval_logger_threaded, args=(self, result))
+        thread.start()
+        
+def interval_logger_threaded(self, result):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(interval_logger(self, result))
+    loop.close()
 
 initail_run = True
 if initail_run:
@@ -96,7 +112,7 @@ if initail_run:
         def run(self):
             try:
                 while True:
-                    result= asyncio.run(self.mplc.main())
+                    result= asyncio.run(mastertrigger(self))
                     print(result)        
             except Exception as e:
                 print(e)

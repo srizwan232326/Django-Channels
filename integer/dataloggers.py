@@ -1,57 +1,37 @@
-import asyncio
+from asgiref.sync import sync_to_async  # Import sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
 from .models import device_tag_setting, datatrigger
-from asgiref.sync import sync_to_async
+import asyncio
 
-class LoggingMicroservice:
-    def __init__(self):
-        self.logging_task_running = False
-
-    async def start_logging(self, result):
-        if not self.logging_task_running:
-            self.logging_task_running = True
-            await self.logging_loop(result)
-
-    async def logging_loop(self, result):
-        while self.logging_task_running:
-            await self.data_logging_on_interval(result)
-
-    async def data_logging_on_interval(self, plc_address_and_value):
-        if plc_address_and_value is None:
-            print("Error: PLC address and value data is None.")
-            self.logging_task_running = False
-            return
-
-        address = 'D100'
-        tag_address = plc_address_and_value.get(address)
-
-        if tag_address is not None:
+async def interval_logger(self, result):
+    global initial_run
+    if initial_run:
+        initial_run = False
+        print("interval_logger called")
+        await asyncio.sleep(5) 
+        print("after sleep in interval_logger")
+        tag = 'D100'
+        value = result.get(tag)
+        if value is not None:
             try:
-                await self.save_trigger_data_async(address, tag_address)
+                await save_trigger_data_async(tag, value)
             except Exception as e:
                 print(f"An error occurred while logging data: {e}")
         else:
             print("Tag address not found in the PLC data.")
-            self.logging_task_running = False
+        initial_run = True
 
-    async def save_trigger_data_async(self, tag, value):
-        try:
-            device_tag = await sync_to_async(device_tag_setting.objects.get)(address=tag)
-            await sync_to_async(datatrigger.objects.create)(
-                tag=device_tag,
-                value=value
-            )
-        except device_tag_setting.DoesNotExist:
-            print("device_tag_setting does not exist for tag:", tag)
-        except Exception as e:
-            print(f"An error occurred while saving trigger data: {e}")
-        finally:
-            await asyncio.sleep(10)
-            self.logging_task_running = False
+async def save_trigger_data_async(tag, value):
+    try:
+        device_tag = await sync_to_async(device_tag_setting.objects.get)(address=tag)
+        print("DeviceTagSetting found for tag:", tag, "value:", value)
+        await sync_to_async(datatrigger.objects.create)(tag=device_tag, value=value)
+    except ObjectDoesNotExist:
+        print("DeviceTagSetting does not exist for tag:", tag)
+    except Exception as e:
+        print(f"An error occurred while saving trigger data: {e}")
 
+def interval_logger_threaded(self, result):
+    asyncio.run(interval_logger(self, result))
 
-async def triggerlogger2(result):
-    print("Trigger logging started.", result)
-    # logging_microservice = LoggingMicroservice()
-    # asyncio.create_task(logging_microservice.start_logging(result))
-    # print("Trigger logging started.")
-    # return "Trigger logging started."
+initial_run = True

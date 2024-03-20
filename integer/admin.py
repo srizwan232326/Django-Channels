@@ -42,8 +42,22 @@ class TriggerConfigurationAdmin(admin.ModelAdmin):
 class datatriggerAdmin(admin.ModelAdmin):
     list_display = ["tag", "value", "timestamp"]	
 
-@admin.register(datahistory)
+@admin.register(RobotCycleDataHistory)
 class datahistoryAdmin(admin.ModelAdmin):
-    list_display = ["count", "doublecount", "char", "date"]
+    list_display = ["daytime", "model", "color", "spare1", "spare2", "L_resin_Paint_cons", "L_hardener_Paint_cons", "L_ratio", "R_resin_Paint_cons", "R_hardener_Paint_cons", "R_ratio"]
 
+@admin.register(LoadingstationData)
+class LoadingstationDataAdmin(admin.ModelAdmin):
+    list_display = ["created_at", "hanger_no", "program_no", "color_no", "color_code", "last_zone", "live_status", "category"]
 
+@admin.register(part)
+class partAdmin(admin.ModelAdmin):
+    list_display = ["LoadingStation", "ln_code", "production_id", "quantity", "warehouse_id", "description"]
+
+@admin.register(zonedata1)
+class zonedata1Admin(admin.ModelAdmin):
+    list_display = ["LoadingStation", "intime", "outtime", "pausetime"]
+
+@admin.register(zonedata2)
+class zonedata2Admin(admin.ModelAdmin):
+    list_display = ["LoadingStation", "intime", "degrease_circ_pump", "degrease_heat_pump", "buner", "deg_hot_water_diff_prs", "deg_circ_pump_prs", "deg_circ_flow", "deg_tank_temp", "deg_tank_level"]

@@ -1,4 +1,5 @@
 from django.db import models
+import time
 
 class plc(models.Model):
     zone_a = models.IntegerField(null=True)
@@ -51,6 +52,7 @@ class device_tag_setting(models.Model):
         ('bit', 'bit'), 
         ('int', 'int'), 
         ('dint', 'dint'),
+        ('intzr', 'intzr'),
         ('string', 'string'),
         ('single-precision', 'single-precision'), 
         ('double-precision', 'double-precision')
@@ -72,10 +74,58 @@ class datatrigger(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     
 
-class datahistory(models.Model):
-    count = models.IntegerField(null=True)
-    doublecount = models.IntegerField(null=True)
-    char = models.CharField(max_length=100)
-    date = models.DateTimeField(auto_now_add=True)
+class RobotCycleDataHistory(models.Model):
+    daytime = models.DateTimeField(auto_now_add=True)
+    model = models.CharField(max_length=100)
+    color = models.CharField(max_length=100)
+    spare1 = models.CharField(max_length=100, null=True, blank=True)
+    spare2 = models.CharField(max_length=100, null=True, blank=True)
+    L_resin_Paint_cons = models.IntegerField(null=True, blank=True)
+    L_hardener_Paint_cons = models.IntegerField(null=True, blank=True)
+    L_ratio = models.IntegerField(null=True, blank=True)
+    R_resin_Paint_cons = models.IntegerField(null=True, blank=True)
+    R_hardener_Paint_cons = models.IntegerField(null=True, blank=True)
+    R_ratio = models.IntegerField(null=True, blank=True)
+
+#/////////////////////////////////////////TRACIBILITY///////////////////////////////////////////
+
+class LoadingstationData(models.Model):
+    created_at = models.DateTimeField()
+    hanger_no = models.IntegerField(null=True)
+    program_no = models.IntegerField(null=True)
+    color_no = models.IntegerField(null=True)
+    color_code = models.CharField(max_length=10, null=True)
+    color_code_man = models.CharField(max_length=10, null=True)
+    last_zone = models.IntegerField(null=True)
+    live_status = models.IntegerField(null=True)
+    category = models.CharField(max_length=10, null=True)
+    
+class part(models.Model):
+    LoadingStation = models.ForeignKey(LoadingstationData, on_delete=models.CASCADE)
+    ln_code = models.CharField(max_length=100, null=True, blank=True)
+    production_id = models.CharField(max_length=100, null=True, blank=True)
+    quantity = models.IntegerField(null=True, blank=True)
+    warehouse_id = models.CharField(max_length=100, null=True, blank=True)
+    description = models.CharField(max_length=100, null=True, blank=True)
+
+
+class zonedata1(models.Model):
+    LoadingStation = models.ForeignKey(LoadingstationData, on_delete=models.CASCADE)
+    intime = models.CharField(max_length=100, null=True, blank=True)
+    outtime = models.CharField(max_length=100, null=True, blank=True)
+    pausetime = models.IntegerField(null=True, blank=True)
+
+class zonedata2(models.Model):
+    LoadingStation = models.ForeignKey(LoadingstationData, on_delete=models.CASCADE)
+    intime = models.CharField(max_length=100, null=True, blank=True)
+    degrease_circ_pump = models.BooleanField(null=True, blank=True)
+    degrease_heat_pump = models.BooleanField(null=True, blank=True)
+    buner = models.BooleanField(null=True, blank=True)
+    deg_hot_water_diff_prs = models.IntegerField(null=True, blank=True)
+    deg_circ_pump_prs = models.IntegerField(null= True ,blank=True)
+    deg_circ_flow = models.IntegerField(null= True, blank=True)
+    deg_tank_temp = models.IntegerField(null=True, blank=True)
+    deg_tank_level = models.IntegerField(null=True, blank=True)
+
 
 
