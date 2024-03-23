@@ -8,7 +8,7 @@ from asgiref.sync import sync_to_async
 from time import sleep
 from .views import *
 from integer.dataloggers import *
-from .trigger_logger import triggerlogger
+from .trigger_logger import triggerlogger , traceability_logger
 import threading
 
 class MPLC:
@@ -93,7 +93,6 @@ async def mastertrigger(self):
     result = await self.mplc.main()
     print(result)
     if result:
-        print("result is not none")
         thread = threading.Thread(target=interval_logger_threaded, args=(self, result))
         thread.start()
         
@@ -107,13 +106,13 @@ initail_run = True
 if initail_run:
     class MPLCMainTask:
         def __init__(self, plc_make, plc_series, plc_ip, plc_port, plc_communication_type):
+            print(plc_make, plc_series, plc_ip, plc_port, plc_communication_type)
             self.mplc = MPLC(ip_addr=plc_ip, port=plc_port, plctype=plc_series, commtype=plc_communication_type)
 
         def run(self):
             try:
                 while True:
                     result= asyncio.run(mastertrigger(self))
-                    print(result)        
             except Exception as e:
                 print(e)
                 initail_run = True
@@ -123,14 +122,15 @@ if initail_run:
 
 @shared_task(bind=True)
 def mplc_main_task(self):
-    plc_info = datalogger.objects.first()
-    print(plc_info)
+    plc_info = datalogger.objects.all()
+    print(plc_info, 'helloplc')
     if plc_info:
-        mplc_task = MPLCMainTask(
-            plc_make=plc_info.Plc_make,
-            plc_series=plc_info.plc_series,
-            plc_ip=plc_info.plc_ip,
-            plc_port=plc_info.plc_port,
-            plc_communication_type=plc_info.plc_communication_type
-        )
-        mplc_task.run()
+        for info in plc_info:
+            mplc_task = MPLCMainTask(
+                plc_make=info.Plc_make,
+                plc_series=info.plc_series,
+                plc_ip=info.plc_ip,
+                plc_port=info.plc_port,
+                plc_communication_type=info.plc_communication_type
+            )
+            mplc_task.run()

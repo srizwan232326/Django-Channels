@@ -63,7 +63,3 @@ class WSConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         pass
-
-    @database_sync_to_async
-    def get_plc_params(self):
-        return plcparameter.objects.first()
